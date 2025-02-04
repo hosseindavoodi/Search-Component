@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useDebounce } from "../Hooks/useDebounce";
 
 const fetchProducts = async (query) => {
   if (!query) return { products: [] };
@@ -10,11 +11,14 @@ const fetchProducts = async (query) => {
 
 const Search = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 1000);
 
-  const { data } = useQuery({
-    queryKey: ["products", searchTerm],
-    queryFn: () => fetchProducts(searchTerm),
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["products", debouncedSearchTerm],
+    queryFn: () => fetchProducts(debouncedSearchTerm),
   });
+
+  console.log(searchTerm.length);
 
   return (
     <div>
@@ -24,6 +28,11 @@ const Search = () => {
         onChange={(e) => setSearchTerm(e.target.value)}
         placeholder="Search products..."
       />
+      {isLoading && <p>is loading ...</p>}
+      {isError && <p>something is wrong, please try again.</p>}
+      {debouncedSearchTerm && data?.products?.length === 0 && (
+        <p>No product found</p>
+      )}
       <ul>
         {data?.products?.map((product) => (
           <li key={product.id}>{product.title}</li>
